@@ -1,5 +1,6 @@
 import { LockOutlined } from '@ant-design/icons';
-import { Button, Form, Input } from 'antd';
+import { App, Button, Form, Input } from 'antd';
+import clsx from 'clsx';
 import * as React from 'react';
 import { NumericFormat } from 'react-number-format';
 
@@ -17,13 +18,21 @@ const products = [
     img: 'https://res.cloudinary.com/rsc/image/upload/b_rgb:FFFFFF,c_pad,dpr_2.625,f_auto,h_535,q_auto,w_950/c_pad,h_535,w_950/R1370284-01?pgw=1&pgwact=1',
   },
 ];
+const qrCodeUrl = 'https://hexdocs.pm/qr_code/docs/qrcode.svg';
+const accountAddress = '0123456789';
+const paymentBank = 'Techcombank';
 
 const thousandSeperator = ',';
 
 function PaymentForm() {
+  const { notification } = App.useApp();
   const [formControl] = Form.useForm<IPaymentForm>();
 
   const [isGettingQRCode, setIsGettingQRCode] = React.useState(false);
+  const [isShowQRCode, setIsShowQRCode] = React.useState(false);
+  const [qrCodeLink, setQrCodeLink] = React.useState('');
+  const [paymentTransferContent, setPaymentTransferContent] = React.useState('');
+  const [isDisabledQRCode, setIsDisabledQRCode] = React.useState(false);
 
   function paymentHandler(formValue: IPaymentForm) {
     console.log('FormValue: ', formValue);
@@ -37,9 +46,28 @@ function PaymentForm() {
     setIsGettingQRCode(true);
 
     setTimeout(() => {
+      setIsDisabledQRCode(false);
       setIsGettingQRCode(false);
+      setIsShowQRCode(true);
+      setQrCodeLink(qrCodeUrl);
+      setPaymentTransferContent('123456789');
     }, 1500);
   }
+
+  React.useEffect(() => {
+    if (qrCodeLink && paymentTransferContent) {
+      const timer = setTimeout(() => {
+        notification.success({
+          message: 'Thanh toán thành công',
+        });
+        setIsDisabledQRCode(true);
+      }, 10000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [notification, paymentTransferContent, qrCodeLink]);
 
   return (
     <div className="flex h-full">
@@ -108,6 +136,28 @@ function PaymentForm() {
             Thanh toán
           </Button>
         </Form>
+      </div>
+      <div className="flex-auto">
+        {isShowQRCode && (
+          <div className="px-6 py-5">
+            <p className="mt-0 text-center text-lg font-bold">Quét mã QR bên dưới để thanh toán</p>
+            <img
+              src={qrCodeLink}
+              alt=""
+              width={300}
+              height={300}
+              className={clsx('my-auto aspect-1 h-[300px] w-[300px]', {
+                'blur-md': isDisabledQRCode,
+              })}
+            />
+            <div>
+              <p className="my-2">Hoặc chuyển tiền vào tài khoản:</p>
+              <p className="my-2">Ngân hàng: {paymentBank}</p>
+              <p className="my-2">Số tài khoản: {accountAddress}</p>
+              <p className="my-2">Nội dung chuyển khoản: {paymentTransferContent}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
