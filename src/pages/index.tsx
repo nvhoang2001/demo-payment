@@ -1,48 +1,18 @@
-import { useState } from 'react'
+import PaymentForm from '@/components/template/Homepage';
 
 // Normal asset import => return path
-import reactLogo from '@/assets/react.svg'
-import ReactLogo from '@/assets/react.svg?react'
+// import reactLogo from '@/assets/react.svg';
+// React Query asset import => return react component
+// import ReactLogo from '@/assets/react.svg?react';
 
 function Homepage() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a
-          href="https://vitejs.dev"
-          target="_blank"
-        >
-          <img
-            src="/vite.svg"
-            className="logo"
-            alt="Vite logo"
-          />
-        </a>
-        <a
-          href="https://react.dev"
-          target="_blank"
-        >
-          <ReactLogo />
-          <img
-            src={reactLogo}
-            className="logo react"
-            alt="React logo"
-          />
-        </a>
+    <div className="flex h-screen w-screen items-center justify-center bg-gradient-to-tr from-blue-500 to-purple-300">
+      <div className="h-auto w-[900px] rounded-2xl bg-white">
+        <PaymentForm />
       </div>
-      {/* <ReactLogo /> */}
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default Homepage
+export default Homepage;
