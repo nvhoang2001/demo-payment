@@ -21,12 +21,12 @@ const products = [
   },
 ];
 // const qrCodeUrl = 'https://hexdocs.pm/qr_code/docs/qrcode.svg';
-const accountAddress = '0379446167';
+const accountAddress = '2030124016789';
 const paymentBank = 'MBBank';
 
 const thousandSeperator = ',';
 
-const socket = io('http://localhost:3000', { transports: ['websocket'] });
+const socket = io('http://localhost:3001', { transports: ['websocket'] });
 
 function PaymentForm() {
   const { notification } = App.useApp();
@@ -57,9 +57,9 @@ function PaymentForm() {
       .post(
         'https://api.vietqr.io/v2/generate',
         {
-          accountNo: '0379446167',
+          accountNo: accountAddress,
           accountName: 'NGO VIET HOANG',
-          acqId: '970422',
+          acqId: '970422', // MBBank id
           addInfo: content,
           amount: normalizedAmount,
           template: 'compact',
@@ -99,10 +99,10 @@ function PaymentForm() {
 
       for (const p of paymentList) {
         const content = p?.description || '';
-        console.log("amount", currentAmount);
-        console.log("randomNumber", randomNumber);
-        console.log("content.includes(`${randomNumber}`)", content.includes(`${randomNumber}`));
-        console.log("content?.amount === currentAmount", p?.amount === currentAmount);
+        console.log('amount', currentAmount);
+        console.log('randomNumber', randomNumber);
+        console.log('content.includes(`${randomNumber}`)', content.includes(`${randomNumber}`));
+        console.log('content?.amount === currentAmount', p?.amount === currentAmount);
 
         if (content && content.includes(`${randomNumber}`) && p?.amount === currentAmount) {
           notification.success({
