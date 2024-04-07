@@ -1,8 +1,10 @@
 import { LockOutlined } from '@ant-design/icons';
 import { App, Button, Form, Input } from 'antd';
+import axios from 'axios';
 import clsx from 'clsx';
 import * as React from 'react';
 import { NumericFormat } from 'react-number-format';
+import { io } from 'socket.io-client';
 
 interface IPaymentForm {
   amount: string;
@@ -18,11 +20,13 @@ const products = [
     img: 'https://res.cloudinary.com/rsc/image/upload/b_rgb:FFFFFF,c_pad,dpr_2.625,f_auto,h_535,q_auto,w_950/c_pad,h_535,w_950/R1370284-01?pgw=1&pgwact=1',
   },
 ];
-const qrCodeUrl = 'https://hexdocs.pm/qr_code/docs/qrcode.svg';
-const accountAddress = '0123456789';
-const paymentBank = 'Techcombank';
+// const qrCodeUrl = 'https://hexdocs.pm/qr_code/docs/qrcode.svg';
+const accountAddress = '0379446167';
+const paymentBank = 'MBBank';
 
 const thousandSeperator = ',';
+
+const socket = io('http://localhost:3000', { transports: ['websocket'] });
 
 function PaymentForm() {
   const { notification } = App.useApp();
@@ -33,6 +37,8 @@ function PaymentForm() {
   const [qrCodeLink, setQrCodeLink] = React.useState('');
   const [paymentTransferContent, setPaymentTransferContent] = React.useState('');
   const [isDisabledQRCode, setIsDisabledQRCode] = React.useState(false);
+  const [randomNumber, setRandomNumber] = React.useState<number>();
+  const [currentAmount, setCurrentAmount] = React.useState<number>();
 
   function paymentHandler(formValue: IPaymentForm) {
     console.log('FormValue: ', formValue);
@@ -40,33 +46,77 @@ function PaymentForm() {
     const { amount } = formValue;
 
     const normalizedAmount = amount.replaceAll(',', '');
-
     console.log('normalizedAmount', normalizedAmount);
 
-    setIsGettingQRCode(true);
+    const randomCode = Math.round(Math.random() * 1000);
+    setRandomNumber(randomCode);
+    setCurrentAmount(+normalizedAmount);
 
-    setTimeout(() => {
-      setIsDisabledQRCode(false);
-      setIsGettingQRCode(false);
-      setIsShowQRCode(true);
-      setQrCodeLink(qrCodeUrl);
-      setPaymentTransferContent('123456789');
-    }, 1500);
+    const content = `${randomCode} chuyển khoản`;
+    axios
+      .post(
+        'https://api.vietqr.io/v2/generate',
+        {
+          accountNo: '0379446167',
+          accountName: 'NGO VIET HOANG',
+          acqId: '970422',
+          addInfo: content,
+          amount: normalizedAmount,
+          template: 'compact',
+        },
+        {
+          headers: {
+            'x-client-id': '<CLIENT_ID_HERE>',
+            'x-api-key': '<API_KEY_HERE>',
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+      .then((res) => {
+        console.log('>>>> res >>>>>', res.data);
+        const qrCode: string = res.data?.data?.qrDataURL || '';
+
+        if (qrCode) {
+          setIsDisabledQRCode(false);
+          setIsGettingQRCode(false);
+          setIsShowQRCode(true);
+          setQrCodeLink(qrCode);
+          setPaymentTransferContent(content);
+        }
+      })
+      .catch((err) => console.error(err));
+
+    setIsGettingQRCode(true);
   }
 
   React.useEffect(() => {
-    if (qrCodeLink && paymentTransferContent) {
-      const timer = setTimeout(() => {
-        notification.success({
-          message: 'Thanh toán thành công',
-        });
-        setIsDisabledQRCode(true);
-      }, 10000);
+    if (!qrCodeLink || !paymentTransferContent) return;
 
-      return () => {
-        clearTimeout(timer);
-      };
-    }
+    socket.on('pay-status', (data) => {
+      console.log('>>>>>>>>>>>>>>>', data);
+
+      const paymentList: any[] = data?.data || [];
+
+      for (const p of paymentList) {
+        const content = p?.description || '';
+        console.log("amount", currentAmount);
+        console.log("randomNumber", randomNumber);
+        console.log("content.includes(`${randomNumber}`)", content.includes(`${randomNumber}`));
+        console.log("content?.amount === currentAmount", p?.amount === currentAmount);
+
+        if (content && content.includes(`${randomNumber}`) && p?.amount === currentAmount) {
+          notification.success({
+            message: 'Thanh toán thành công',
+          });
+          setIsDisabledQRCode(true);
+          break;
+        }
+      }
+    });
+
+    return () => {
+      socket.off('pay-status');
+    };
   }, [notification, paymentTransferContent, qrCodeLink]);
 
   return (
